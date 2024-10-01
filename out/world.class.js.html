@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: world.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: world.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Class representing the game world.
+ */
+class World {
+    /**
+     * The character object.
+     * @type {Character}
+     */
+    character = new Character();
+
+    /**
+     * The endboss object.
+     * @type {Endboss}
+     */
+    endboss = new Endboss();
+
+    /**
+     * The health status bar object.
+     * @type {StatusBarHealth}
+     */
+    statusBarHealth = new StatusBarHealth();
+
+    /**
+     * The coin status bar object.
+     * @type {StatusBarCoin}
+     */
+    statusBarCoin = new StatusBarCoin();
+
+    /**
+     * The bottle status bar object.
+     * @type {StatusBarBottle}
+     */
+    statusBarBottle = new StatusBarBottle();
+
+    /**
+     * The endboss status bar object.
+     * @type {StatusBarEndboss}
+     */
+    statusBarEndboss = new StatusBarEndboss();
+
+    /**
+     * Array containing throwable objects.
+     * @type {ThrowableObject[]}
+     */
+    throwableObjects = [];
+
+    /**
+     * The current level.
+     * @type {Level}
+     */
+    level = level1;
+
+    /**
+     * The canvas element.
+     * @type {HTMLCanvasElement}
+     */
+    canvas;
+
+    /**
+     * The canvas 2D rendering context.
+     * @type {CanvasRenderingContext2D}
+     */
+    ctx;
+
+    /**
+     * The keyboard controller.
+     * @type {Keyboard}
+     */
+    keyboard;
+
+    /**
+     * The camera position on the x-axis.
+     * @type {number}
+     */
+    camera_x = 0;
+
+    /**
+     * The background music player object.
+     * @type {BackgroundMusicPlayer}
+     */
+    background_music_player;
+
+    /**
+     * A flag indicating whether the audio is muted.
+     * @type {boolean}
+     */
+    mute = false;
+
+    /**
+     * A timeout identifier for collision detection.
+     * @type {number}
+     */
+    collisionTimeout = null;
+
+    /**
+     * The sound effect for bottle.
+     * @type {HTMLAudioElement}
+     */
+    bottle_sound = new Audio('./audio/bottle_sound.mp3');
+
+    /**
+     * The sound effect for coin.
+     * @type {HTMLAudioElement}
+     */
+    coin_sound = new Audio('./audio/coin_sound.mp3');
+
+    /**
+     * The sound effect for chicken.
+     * @type {HTMLAudioElement}
+     */
+    chicken_sound = new Audio('./audio/chicken_sound.mp3');
+
+    /**
+     * Creates an instance of World.
+     * @param {HTMLCanvasElement} canvas - The canvas element.
+     * @param {Keyboard} keyboard - The keyboard controller.
+     */
+    constructor(canvas, keyboard) {
+        this.ctx = canvas.getContext('2d');
+        this.canvas = canvas;
+        this.keyboard = keyboard;
+        this.draw();
+        this.background_music_player = new BackgroundMusicPlayer('./audio/background_music.mp3');
+        this.setWorld();
+        this.run();
+    }
+
+    /**
+     * Sets up the world.
+     */
+    setWorld() {
+        this.character.world = this;
+        this.background_music_player.play();
+        this.endboss.world = this;
+    }
+
+    /**
+     * Starts the game loop.
+     */
+    run() {
+        setStoppableInterval(() => {
+            this.checkSquashing();
+            this.checkCollisions();
+            this.checkCollisionsBottle();
+            this.checkThrowObjects();
+            this.checkCollisionsCoin();
+            this.checkCollisionsBottleAndEndboss();
+            this.checkendbossDead();
+            this.checkDistanceToEndboss();
+        }, 200);
+    }
+
+    /**
+     * Checks if throwable objects are thrown.
+     */
+    checkThrowObjects() {
+        if (this.keyboard.D &amp;&amp; this.character.bottleStatus > 0) {
+            let bottle = new ThrowableObject(this.character.x + 50, this.character.y + 100, this.character.otherDirection);
+            this.throwableObjects.push(bottle);
+            this.removeBottle();
+        }
+    }
+
+    /**
+     * Checks the distance between the character and the endboss.
+     */
+    checkDistanceToEndboss() {
+        if (this.character.x + 360 > this.endboss.x) {
+            this.endboss.smallDistance = true;
+        } else {
+            this.endboss.smallDistance = false;
+        }
+    }
+
+    /**
+     * Removes a bottle from the character's inventory and updates the bottle status bar.
+     */
+    removeBottle() {
+        this.character.bottleStatus -= 20;
+        this.statusBarBottle.setPercentage(this.character.bottleStatus);
+    }
+
+    /**
+     * Checks collisions between the character and enemies or the endboss.
+     */
+    checkCollisions() {
+        if (!this.collisionTimeout) {
+            setTimeout(() => {
+                this.level.enemies.forEach(enemy => {
+                    if (!enemy.isDead &amp;&amp; this.character.isColliding(enemy)) {
+                        this.character.hit();
+                        this.statusBarHealth.setPercentage(this.character.energy);
+                    }
+                });
+
+                if (this.character.isColliding(this.endboss)) {
+                    this.character.hit();
+                    this.statusBarHealth.setPercentage(this.character.energy);
+                }
+
+                this.collisionTimeout = null;
+            }, 1000);
+
+            this.collisionTimeout = true;
+        }
+    }
+
+    /**
+     * Checks if the character is squashing enemies.
+     */
+    checkSquashing() {
+        setStoppableInterval(() => {
+            this.level.enemies.forEach(enemy => {
+                if (this.character.isColliding(enemy) &amp;&amp; this.character.isFalling()) {
+                    enemy.isDead = true;
+                    this.remove(enemy, this.level.enemies);
+                }
+            });
+        }, 150);
+    }
+
+    /**
+     * Checks collisions between the character and bottles.
+     */
+    checkCollisionsBottle() {
+        setStoppableInterval(() => {
+            this.level.bottles.forEach(bottle => {
+                if (this.character.isColliding(bottle)) {
+                    this.character.getBottle();
+                    this.statusBarBottle.setPercentage(this.character.bottleStatus);
+                    if (!mute) {
+                        this.bottle_sound.play();
+                    }
+                    this.remove(bottle, this.level.bottles);
+                }
+            });
+        }, 100);
+    }
+
+    /**
+     * Checks collisions between throwable objects and the endboss.
+     */
+    checkCollisionsBottleAndEndboss() {
+        setStoppableInterval(() => {
+            this.throwableObjects.forEach(bottle => {
+                if (this.endboss.isColliding(bottle)) {
+                    this.remove(bottle, this.throwableObjects);
+                    if (!mute) {
+                        this.chicken_sound.play();
+                    }
+                    this.endboss.bossHurt = true;
+                    this.endboss.endbossHurt();
+                    this.statusBarEndboss.setPercentage(this.endboss.EndbossEnergy);
+                }
+            });
+        }, 1000);
+    }
+
+    /**
+     * Checks if the endboss is dead.
+     */
+    checkendbossDead() {
+        setStoppableInterval(() => {
+            if (this.endboss.EndbossEnergy === 0) {
+                this.endboss.animateDead();
+            }
+        }, 200);
+    }
+
+    /**
+     * Checks collisions between the character and coins.
+     */
+    checkCollisionsCoin() {
+        setStoppableInterval(() => {
+            this.level.coins.forEach(coin => {
+                if (this.character.isColliding(coin)) {
+                    this.character.coinStatus += 20;
+                    this.statusBarCoin.setPercentage(this.character.coinStatus);
+                    if (!mute) {
+                        this.coin_sound.play();
+                    }
+                    this.remove(coin, this.level.coins);
+                }
+            });
+        }, 100);
+    }
+
+    /**
+     * Draws the game world including characters, objects, and status bars.
+     */
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.ctx.translate(this.camera_x, 0);
+        this.addObjectsToMap(this.level.backgroundObjects);
+        this.addObjectsToMap(this.level.bottles);
+        this.addObjectsToMap(this.level.coins);
+        this.addObjectsToMap(this.level.clouds);
+
+        this.ctx.translate(-this.camera_x, 0);      // Back
+        //----- Space for fixed objects----
+        this.addToMap(this.statusBarHealth);
+        this.ctx.translate(this.camera_x, 0);       // Forwards
+
+        this.ctx.translate(-this.camera_x, 0);      // Back
+        //----- Space for fixed objects----
+        this.addToMap(this.statusBarCoin);
+        this.ctx.translate(this.camera_x, 0);       // Forwards
+
+        this.ctx.translate(-this.camera_x, 0);      // Back
+        //----- Space for fixed objects----
+        this.addToMap(this.statusBarBottle);
+        this.ctx.translate(this.camera_x, 0);       // Forwards
+
+        this.ctx.translate(-this.camera_x, 0);      // Back
+        //----- Space for fixed objects----
+        this.addToMap(this.statusBarEndboss);
+        this.ctx.translate(this.camera_x, 0);       // Forwards
+
+        this.addToMap(this.character);
+        this.addToMap(this.endboss);
+        this.addObjectsToMap(this.level.enemies);
+        this.addObjectsToMap(this.throwableObjects);
+        this.ctx.translate(-this.camera_x, 0);
+        let self = this;
+        requestAnimationFrame(function () {
+            self.draw();
+        });
+    }
+
+    /**
+     * Adds multiple objects to the map.
+     * @param {Array} objects - The array of objects to add.
+     */
+    addObjectsToMap(objects) {
+        objects.forEach(object => {
+            this.addToMap(object);
+        });
+    };
+
+    /**
+     * Adds a single object to the map.
+     * @param {Object} mo - The object to add to the map.
+     */
+    addToMap(mo) {
+        if (mo.otherDirection) {
+            this.flipImage(mo);
+        }
+
+        mo.draw(this.ctx);
+        mo.drawFrame(this.ctx);
+        mo.drawFrameHitBox(this.ctx);
+
+        if (mo.otherDirection) {
+            this.flipImageBack(mo);
+        }
+    }
+
+    /**
+     * Flips the image horizontally.
+     * @param {Object} mo - The object whose image needs to be flipped.
+     */
+    flipImage(mo) {
+        this.ctx.save();
+        this.ctx.translate(mo.width, 0);
+        this.ctx.scale(-1, 1);
+        mo.x = mo.x * -1;
+    }
+
+    /**
+     * Reverts the flipped image back to its original state.
+     * @param {Object} mo - The object whose image needs to be reverted.
+     */
+    flipImageBack(mo) {
+        mo.x = mo.x * -1;
+        this.ctx.restore();
+    }
+
+    /**
+     * Removes an object from the specified object list.
+     * @param {Object} object - The object to remove.
+     * @param {Array} objectList - The list from which to remove the object.
+     */
+    remove(object, objectList) {
+        if (object instanceof Chicken) {
+            setTimeout(() => {
+                const index = objectList.indexOf(object);
+                if (index !== -1) {
+                    objectList.splice(index, 1);
+                }
+            }, 400);
+        } else {
+            const index = objectList.indexOf(object);
+            if (index !== -1) {
+                objectList.splice(index, 1);
+            }
+        }
+    }
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundMusicPlayer.html">BackgroundMusicPlayer</a></li><li><a href="BackroundObject.html">BackroundObject</a></li><li><a href="Bottle.html">Bottle</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="DrawableObject.html">DrawableObject</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="Keyboard.html">Keyboard</a></li><li><a href="Level.html">Level</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="StatusBarBottle.html">StatusBarBottle</a></li><li><a href="StatusBarCoin.html">StatusBarCoin</a></li><li><a href="StatusBarEndboss.html">StatusBarEndboss</a></li><li><a href="StatusBarHealth.html">StatusBarHealth</a></li><li><a href="ThrowableObject.html">ThrowableObject</a></li><li><a href="World.html">World</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 29 2024 09:51:20 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

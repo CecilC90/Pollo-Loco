@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: endboss.class.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: endboss.class.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Represents an end boss in the game.
+ */
+class Endboss extends MovableObject {
+    /**
+     * The height of the end boss.
+     * @type {number}
+     */
+    height = 400;
+
+    /**
+     * The width of the end boss.
+     * @type {number}
+     */
+    width = 300;
+
+    /**
+     * The y-coordinate of the end boss.
+     * @type {number}
+     */
+    y = 55;
+
+    /**
+     * The movement speed of the end boss.
+     * @type {number}
+     */
+    speed = 1;
+
+    /**
+     * The offset for collision detection.
+     * @type {Object}
+     */
+    offset = {
+        top: 60,
+        left: 0,
+        right: 0,
+        bottom: 70,
+    };
+
+    /**
+     * Images for the walking animation of the end boss.
+     * @type {string[]}
+     */
+    IMAGES_WALK = [
+        './img/4_enemie_boss_chicken/1_walk/G1.png',
+        './img/4_enemie_boss_chicken/1_walk/G2.png',
+        './img/4_enemie_boss_chicken/1_walk/G3.png'
+    ];
+
+    /**
+     * Images for the alert animation of the end boss.
+     * @type {string[]}
+     */
+    IMAGES_ALERT = [
+        './img/4_enemie_boss_chicken/2_alert/G5.png',
+        './img/4_enemie_boss_chicken/2_alert/G6.png',
+        './img/4_enemie_boss_chicken/2_alert/G7.png',
+        './img/4_enemie_boss_chicken/2_alert/G8.png',
+        './img/4_enemie_boss_chicken/2_alert/G9.png',
+        './img/4_enemie_boss_chicken/2_alert/G10.png',
+        './img/4_enemie_boss_chicken/2_alert/G11.png',
+        './img/4_enemie_boss_chicken/2_alert/G12.png'
+    ];
+
+    /**
+     * Images for the hurt animation of the end boss.
+     * @type {string[]}
+     */
+    IMAGES_HURT = [
+        './img/4_enemie_boss_chicken/4_hurt/G21.png',
+        './img/4_enemie_boss_chicken/4_hurt/G22.png',
+        './img/4_enemie_boss_chicken/4_hurt/G23.png',
+    ];
+
+    /**
+     * Images for the dead animation of the end boss.
+     * @type {string[]}
+     */
+    IMAGES_DEAD = [
+        './img/4_enemie_boss_chicken/5_dead/G24.png',
+        './img/4_enemie_boss_chicken/5_dead/G25.png',
+        './img/4_enemie_boss_chicken/5_dead/G26.png'
+    ];
+
+    /**
+     * Creates an instance of Endboss.
+     */
+    constructor() {
+        super().loadImage(this.IMAGES_ALERT[0]);
+        this.loadImages(this.IMAGES_ALERT);
+        this.loadImages(this.IMAGES_HURT);
+        this.loadImages(this.IMAGES_DEAD);
+        this.loadImages(this.IMAGES_WALK);
+        this.x = 2500;
+        this.smallDistance = false;
+        this.attackInterval = null;
+        this.moveLeftinterval = null;
+        this.alertInterval = null;
+        this.animate();
+        this.bossHurt = false;
+    }
+
+    /**
+     * Animates the end boss.
+     */
+    animate() {
+        this.alertInterval = setInterval(() => {
+            if (this.smallDistance) {
+                this.playAnimation(this.IMAGES_WALK);
+                if (!this.attackInterval) {
+                    this.attackInterval = setInterval(() => {
+                        this.moveLeft();
+                    }, 1000 / 60);
+                }
+            } else {
+                this.playAnimation(this.IMAGES_ALERT);
+                if (this.attackInterval) {
+                    clearInterval(this.attackInterval);
+                    this.attackInterval = null;
+                }
+            }
+        }, 200);
+    }
+
+    /**
+     * Handles the animation for the end boss being hurt.
+     */
+    endbossHurt() {
+        if (this.bossHurt) {
+            this.hitBoss();
+            let intervalID = setInterval(() => {
+                this.playAnimation(this.IMAGES_HURT);
+            }, 200);
+            setTimeout(() => {
+                clearInterval(intervalID);
+                this.bossHurt = false;
+            }, 500);
+        }
+    }
+
+    /**
+     * Animates the end boss when it is dead.
+     */
+    animateDead() {
+        clearInterval(this.alertInterval);
+        clearInterval(this.attackInterval);
+        setStoppableInterval(() => {
+            this.playAnimation(this.IMAGES_DEAD);
+        }, 800);
+        setTimeout(() => {
+            gameOver();
+        }, 1500);
+    }
+
+    /**
+     * Checks for collisions with other objects.
+     * @param {MovableObject[]} objects - An array of movable objects to check collisions with.
+     */
+    checkCollisions(objects) {
+        objects.forEach(object => {
+            if (!object.isDead() &amp;&amp; this.isColliding(object)) {
+                this.bossHurt = true;
+            }
+        });
+    }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="BackgroundMusicPlayer.html">BackgroundMusicPlayer</a></li><li><a href="BackroundObject.html">BackroundObject</a></li><li><a href="Bottle.html">Bottle</a></li><li><a href="Character.html">Character</a></li><li><a href="Chicken.html">Chicken</a></li><li><a href="Cloud.html">Cloud</a></li><li><a href="Coin.html">Coin</a></li><li><a href="DrawableObject.html">DrawableObject</a></li><li><a href="Endboss.html">Endboss</a></li><li><a href="Keyboard.html">Keyboard</a></li><li><a href="Level.html">Level</a></li><li><a href="MovableObject.html">MovableObject</a></li><li><a href="StatusBarBottle.html">StatusBarBottle</a></li><li><a href="StatusBarCoin.html">StatusBarCoin</a></li><li><a href="StatusBarEndboss.html">StatusBarEndboss</a></li><li><a href="StatusBarHealth.html">StatusBarHealth</a></li><li><a href="ThrowableObject.html">ThrowableObject</a></li><li><a href="World.html">World</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 29 2024 09:51:20 GMT+0100 (Mitteleuropäische Normalzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

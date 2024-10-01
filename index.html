@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="./js/game.js"></script>
+    <script src="./classes/drawable-object.class.js"></script>
+    <script src="./classes/movable-object.class.js"></script>
+    <script src="./classes/keyboard.class.js"></script>
+    <script src="./classes/background-object.class.js"></script>
+    <script src="./classes/cloud.class.js"></script>
+    <script src="./classes/status-bar-health.class.js"></script>
+    <script src="./classes/status-bar-coin.class.js"></script>
+    <script src="./classes/status-bar-bottle.class.js"></script>
+    <script src="./classes/status-bar-endboss.class.js"></script>
+    <script src="./classes/character.class.js"></script>
+    <script src="./classes/chicken.class.js"></script>
+    <script src="./classes/small-chicken.class.js"></script>
+    <script src="./classes/coins.class.js"></script>
+    <script src="./classes/bottle.class.js"></script>
+    <script src="./classes/world.class.js"></script>
+    <script src="./classes/level.class.js"></script>
+    <script src="./classes/endboss.class.js"></script>
+    <script src="./classes/throwable-object.class.js"></script>
+    <script src="./classes/backgroundMusicPlayer.js"></script>
+
+
+    <script src="./levels/level1.js"></script>
+    
+    <title>El Pollo Loco</title>
+    <link rel="icon" type="image/x-icon" href="./img/4_enemie_boss_chicken/1_walk/G2.png">
+
+</head>
+
+<body onload="init()">
+
+    <div class="turn-device-container">
+        <img src="./img/turn_device_icon.png" alt="">
+        <p>Turn Device</p>
+    </div>
+
+    <h1>El pollo loco</h1>
+
+    <div class="canvas-container" id="canvas-container">
+        <div class="gameOverScreen" id="gameOverScreen">
+            <img src="./img/9_intro_outro_screens/game_over/game over.png" alt="">
+            <div class="restart-btn" onclick="restartGame()">Restart</div>
+        </div>
+        <div class="gamelose" id="gamelose">
+            <img src="./img/9_intro_outro_screens/game_over/you lost.png" alt="">
+            <div class="restart-btn" id="restartBtn" onclick="restartGame()">Restart</div>
+        </div>
+        <div class="startScreen">
+            <img id="startScreen" class="startScreen" src="./img/9_intro_outro_screens/start/startscreen_1.png"
+                alt="startscreen">
+            <img id="startButton" src="./img/play_icon.png" class="startButton" alt="startButton" onclick="restartGame()">
+        </div>
+        <canvas id="canvas" width="720" height="480">
+           
+
+        </canvas>
+        <div id="hud">
+            <div class="panel top">
+                <div class="panel-wrapper-top">
+                    <img id="soundIcon" src="./img/sound_icon.png" alt="" onclick="toggleBackgroundMusic()">
+                </div>
+            </div>
+            <div class="panel bottom">
+                <div class="panel-wrapper-bottom">
+                    <div class="panel-wrapper-left">
+                        <img id="btnLeft" src="./img/left_icon.png" alt="">
+                        <img id="btnRight" src="./img/right_icon.png" alt="">
+                    </div>
+                    <div class="panel-wrapper-right">
+                        <img id="btnUp" src="./img/up_icon.png" alt="">
+                        <img id="btnThrow" src="./img/throw_icon.png" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="description-container">
+        <span>Right/Left Arrow: Move</span>
+        <span>Space: Jump</span>
+        <span>Key D: Throw Bottle</span>
+    </div>
+
+
+
+
+</body>
+
+</html>
